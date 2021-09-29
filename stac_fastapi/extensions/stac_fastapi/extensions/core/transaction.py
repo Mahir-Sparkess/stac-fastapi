@@ -78,6 +78,7 @@ class TransactionExtension(ApiExtension):
             response_model_exclude_none=True,
             methods=["POST"],
             endpoint=self._create_endpoint(self.client.create_item, stac_types.Item),
+            status_code=201
         )
 
     def register_update_item(self):
@@ -119,6 +120,7 @@ class TransactionExtension(ApiExtension):
             endpoint=self._create_endpoint(
                 self.client.create_collection, stac_types.Collection
             ),
+            status_code=201
         )
 
     def register_update_collection(self):
