@@ -1,15 +1,11 @@
 """transaction extension."""
-from typing import Callable, List, Optional, Type, Union
+from typing import List, Optional, Type, Union
 
 import attr
 from fastapi import APIRouter, FastAPI
-from pydantic import BaseModel
 from stac_pydantic import Collection, Item
 from starlette.responses import JSONResponse, Response
 
-from stac_fastapi.api.models import APIRequest, CollectionUri, ItemUri
-from stac_fastapi.api.routes import create_async_endpoint, create_sync_endpoint
-from stac_fastapi.types import stac as stac_types
 from stac_fastapi.types.config import ApiSettings
 from stac_fastapi.types.core import AsyncBaseTransactionsClient, BaseTransactionsClient
 from stac_fastapi.types.extension import ApiExtension
@@ -46,27 +42,6 @@ class TransactionExtension(ApiExtension):
     router: APIRouter = attr.ib(factory=APIRouter)
     response_class: Type[Response] = attr.ib(default=JSONResponse)
 
-    def _create_endpoint(
-        self,
-        func: Callable,
-        request_type: Union[
-            Type[APIRequest],
-            Type[BaseModel],
-            Type[stac_types.Item],
-            Type[stac_types.Collection],
-        ],
-    ) -> Callable:
-        """Create a FastAPI endpoint."""
-        if isinstance(self.client, AsyncBaseTransactionsClient):
-            return create_async_endpoint(
-                func, request_type, response_class=self.response_class
-            )
-        elif isinstance(self.client, BaseTransactionsClient):
-            return create_sync_endpoint(
-                func, request_type, response_class=self.response_class
-            )
-        raise NotImplementedError
-
     def register_create_item(self):
         """Register create item endpoint (POST /collections/{collectionId}/items)."""
         self.router.add_api_route(
@@ -77,7 +52,7 @@ class TransactionExtension(ApiExtension):
             response_model_exclude_unset=True,
             response_model_exclude_none=True,
             methods=["POST"],
-            endpoint=self._create_endpoint(self.client.create_item, stac_types.Item),
+            endpoint=self.client.create_item,
         )
 
     def register_update_item(self):
@@ -90,7 +65,7 @@ class TransactionExtension(ApiExtension):
             response_model_exclude_unset=True,
             response_model_exclude_none=True,
             methods=["PUT"],
-            endpoint=self._create_endpoint(self.client.update_item, stac_types.Item),
+            endpoint=self.client.update_item,
         )
 
     def register_delete_item(self):
@@ -103,7 +78,7 @@ class TransactionExtension(ApiExtension):
             response_model_exclude_unset=True,
             response_model_exclude_none=True,
             methods=["DELETE"],
-            endpoint=self._create_endpoint(self.client.delete_item, ItemUri),
+            endpoint=self.client.delete_item,
         )
 
     def register_create_collection(self):
@@ -116,9 +91,7 @@ class TransactionExtension(ApiExtension):
             response_model_exclude_unset=True,
             response_model_exclude_none=True,
             methods=["POST"],
-            endpoint=self._create_endpoint(
-                self.client.create_collection, stac_types.Collection
-            ),
+            endpoint=self.client.create_collection,
         )
 
     def register_update_collection(self):
@@ -131,9 +104,7 @@ class TransactionExtension(ApiExtension):
             response_model_exclude_unset=True,
             response_model_exclude_none=True,
             methods=["PUT"],
-            endpoint=self._create_endpoint(
-                self.client.update_collection, stac_types.Collection
-            ),
+            endpoint=self.client.update_collection,
         )
 
     def register_delete_collection(self):
@@ -146,9 +117,7 @@ class TransactionExtension(ApiExtension):
             response_model_exclude_unset=True,
             response_model_exclude_none=True,
             methods=["DELETE"],
-            endpoint=self._create_endpoint(
-                self.client.delete_collection, CollectionUri
-            ),
+            endpoint=self.client.delete_collection,
         )
 
     def register(self, app: FastAPI) -> None:
