@@ -18,7 +18,6 @@ from stac_fastapi.api.models import (
     CollectionUri,
     EmptyRequest,
     ItemCollectionUri,
-    ItemUri,
     SearchGetRequest,
     _create_request_model,
 )
@@ -120,7 +119,7 @@ class StacApi:
             response_model_exclude_unset=False,
             response_model_exclude_none=True,
             methods=["GET"],
-            endpoint=self._create_endpoint(self.client.landing_page, EmptyRequest),
+            endpoint=self.client.landing_page,
         )
 
     def register_conformance_classes(self):
@@ -139,7 +138,7 @@ class StacApi:
             response_model_exclude_unset=True,
             response_model_exclude_none=True,
             methods=["GET"],
-            endpoint=self._create_endpoint(self.client.conformance, EmptyRequest),
+            endpoint=self.client.conformance,
         )
 
     def register_get_item(self):
@@ -156,7 +155,7 @@ class StacApi:
             response_model_exclude_unset=True,
             response_model_exclude_none=True,
             methods=["GET"],
-            endpoint=self._create_endpoint(self.client.get_item, ItemUri),
+            endpoint=self.client.get_item,
         )
 
     def register_post_search(self):
