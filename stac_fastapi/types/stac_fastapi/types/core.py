@@ -9,6 +9,7 @@ from stac_pydantic.api import Search
 from stac_pydantic.links import Relations
 from stac_pydantic.shared import MimeTypes
 from stac_pydantic.version import STAC_VERSION
+from fastapi import Request
 
 from stac_fastapi.types import stac as stac_types
 from stac_fastapi.types.extension import ApiExtension
@@ -22,13 +23,15 @@ class BaseTransactionsClient(abc.ABC):
     """Defines a pattern for implementing the STAC transaction extension."""
 
     @abc.abstractmethod
-    def create_item(self, item: stac_types.Item, **kwargs) -> stac_types.Item:
+    def create_item(self, collection_id: str, item: stac_types.Item, request: Request) -> stac_types.Item:
         """Create a new item.
 
-        Called with `POST /collections/{collectionId}/items`.
+        Called with `POST /collections/{collection_id}/items`.
 
         Args:
+            collection_id: ID of the collection to add item to.
             item: the item
+            request: starlette request object
 
         Returns:
             The item that was created.
@@ -37,15 +40,20 @@ class BaseTransactionsClient(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def update_item(self, item: stac_types.Item, **kwargs) -> stac_types.Item:
+    def update_item(self, collection_id: str,
+                          item_id: str, item: stac_types.Item, request: Request
+                          ) -> stac_types.Item:
         """Perform a complete update on an existing item.
 
-        Called with `PUT /collections/{collectionId}/items`. It is expected that this item already exists.  The update
-        should do a diff against the saved item and perform any necessary updates.  Partial updates are not supported
-        by the transactions extension.
+        Called with `PUT /collections/{collection_id}/items/{item_id}`. It is expected that this item already exists.
+        The update should do a diff against the saved item and perform any necessary updates.
+        Partial updates are not supported by the transactions extension.
 
         Args:
+            collection_id: the ID of the item's collection
+            item_id: the ID of the item
             item: the item (must be complete)
+            request: starlette request object
 
         Returns:
             The updated item.
@@ -54,15 +62,16 @@ class BaseTransactionsClient(abc.ABC):
 
     @abc.abstractmethod
     def delete_item(
-        self, item_id: str, collection_id: str, **kwargs
+        self, item_id: str, collection_id: str, request: Request
     ) -> stac_types.Item:
         """Delete an item from a collection.
 
-        Called with `DELETE /collections/{collectionId}/items/{itemId}`
+        Called with `DELETE /collections/{collection_id}/items/{item_id}`
 
         Args:
             item_id: id of the item.
             collection_id: id of the collection.
+            request: starlette request object.
 
         Returns:
             The deleted item.
@@ -71,7 +80,7 @@ class BaseTransactionsClient(abc.ABC):
 
     @abc.abstractmethod
     def create_collection(
-        self, collection: stac_types.Collection, **kwargs
+        self, collection: stac_types.Collection, request: Request
     ) -> stac_types.Collection:
         """Create a new collection.
 
@@ -79,6 +88,7 @@ class BaseTransactionsClient(abc.ABC):
 
         Args:
             collection: the collection
+            request: starlette request object
 
         Returns:
             The collection that was created.
@@ -87,16 +97,18 @@ class BaseTransactionsClient(abc.ABC):
 
     @abc.abstractmethod
     def update_collection(
-        self, collection: stac_types.Collection, **kwargs
+        self, collection_id: str, collection: stac_types.Collection, request: Request,
     ) -> stac_types.Collection:
         """Perform a complete update on an existing collection.
 
-        Called with `PUT /collections`. It is expected that this item already exists.  The update should do a diff
-        against the saved collection and perform any necessary updates.  Partial updates are not supported by the
-        transactions extension.
+        Called with `PUT /collections/{collection_id}`. It is expected that this item already exists.
+        The update should do a diff against the saved collection and perform any necessary updates.
+        Partial updates are not supported by the transactions extension.
 
         Args:
+            collection_id: id of the collection
             collection: the collection (must be complete)
+            request: starlette request object
 
         Returns:
             The updated collection.
@@ -104,13 +116,16 @@ class BaseTransactionsClient(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def delete_collection(self, collection_id: str, **kwargs) -> stac_types.Collection:
+    def delete_collection(
+        self, collection_id: str, request: Request
+    ) -> stac_types.Collection:
         """Delete a collection.
 
-        Called with `DELETE /collections/{collectionId}`
+        Called with `DELETE /collections/{collection_id}`
 
         Args:
             collection_id: id of the collection.
+            request: starlette request object
 
         Returns:
             The deleted collection.
@@ -123,13 +138,15 @@ class AsyncBaseTransactionsClient(abc.ABC):
     """Defines a pattern for implementing the STAC transaction extension."""
 
     @abc.abstractmethod
-    async def create_item(self, item: stac_types.Item, **kwargs) -> stac_types.Item:
+    async def create_item(self, collection_id: str, item: stac_types.Item, request: Request) -> stac_types.Item:
         """Create a new item.
 
-        Called with `POST /collections/{collectionId}/items`.
+        Called with `POST /collections/{collection_id}/items`.
 
         Args:
+            collection_id: ID of the collection to add item to.
             item: the item
+            request: starlette request object
 
         Returns:
             The item that was created.
@@ -138,15 +155,20 @@ class AsyncBaseTransactionsClient(abc.ABC):
         ...
 
     @abc.abstractmethod
-    async def update_item(self, item: stac_types.Item, **kwargs) -> stac_types.Item:
+    async def update_item(self, collection_id: str,
+                          item_id: str, item: stac_types.Item, request: Request
+                          ) -> stac_types.Item:
         """Perform a complete update on an existing item.
 
-        Called with `PUT /collections/{collectionId}/items`. It is expected that this item already exists.  The update
-        should do a diff against the saved item and perform any necessary updates.  Partial updates are not supported
-        by the transactions extension.
+        Called with `PUT /collections/{collection_id}/items/{item_id}`. It is expected that this item already exists.
+        The update should do a diff against the saved item and perform any necessary updates.
+        Partial updates are not supported by the transactions extension.
 
         Args:
+            collection_id: the ID of the item's collection
+            item_id: the ID of the item
             item: the item (must be complete)
+            request: starlette request object
 
         Returns:
             The updated item.
@@ -155,15 +177,16 @@ class AsyncBaseTransactionsClient(abc.ABC):
 
     @abc.abstractmethod
     async def delete_item(
-        self, item_id: str, collection_id: str, **kwargs
+        self, item_id: str, collection_id: str, request: Request
     ) -> stac_types.Item:
         """Delete an item from a collection.
 
-        Called with `DELETE /collections/{collectionId}/items/{itemId}`
+        Called with `DELETE /collections/{collection_id}/items/{item_id}`
 
         Args:
             item_id: id of the item.
             collection_id: id of the collection.
+            request: starlette request object.
 
         Returns:
             The deleted item.
@@ -172,7 +195,7 @@ class AsyncBaseTransactionsClient(abc.ABC):
 
     @abc.abstractmethod
     async def create_collection(
-        self, collection: stac_types.Collection, **kwargs
+        self, collection: stac_types.Collection, request: Request
     ) -> stac_types.Collection:
         """Create a new collection.
 
@@ -180,6 +203,7 @@ class AsyncBaseTransactionsClient(abc.ABC):
 
         Args:
             collection: the collection
+            request: starlette request object
 
         Returns:
             The collection that was created.
@@ -188,16 +212,18 @@ class AsyncBaseTransactionsClient(abc.ABC):
 
     @abc.abstractmethod
     async def update_collection(
-        self, collection: stac_types.Collection, **kwargs
+        self, collection_id: str, collection: stac_types.Collection, request: Request,
     ) -> stac_types.Collection:
         """Perform a complete update on an existing collection.
 
-        Called with `PUT /collections`. It is expected that this item already exists.  The update should do a diff
-        against the saved collection and perform any necessary updates.  Partial updates are not supported by the
-        transactions extension.
+        Called with `PUT /collections/{collection_id}`. It is expected that this item already exists.
+        The update should do a diff against the saved collection and perform any necessary updates.
+        Partial updates are not supported by the transactions extension.
 
         Args:
+            collection_id: id of the collection
             collection: the collection (must be complete)
+            request: starlette request object
 
         Returns:
             The updated collection.
@@ -206,14 +232,15 @@ class AsyncBaseTransactionsClient(abc.ABC):
 
     @abc.abstractmethod
     async def delete_collection(
-        self, collection_id: str, **kwargs
+        self, collection_id: str, request: Request
     ) -> stac_types.Collection:
         """Delete a collection.
 
-        Called with `DELETE /collections/{collectionId}`
+        Called with `DELETE /collections/{collection_id}`
 
         Args:
             collection_id: id of the collection.
+            request: starlette request object
 
         Returns:
             The deleted collection.

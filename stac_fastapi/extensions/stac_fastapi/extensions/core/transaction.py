@@ -5,10 +5,9 @@ from typing import Callable, List, Type, Union
 import attr
 from fastapi import APIRouter, FastAPI
 from pydantic import BaseModel
-from stac_pydantic import Collection, Item
 from starlette.responses import JSONResponse, Response
 
-from stac_fastapi.api.models import APIRequest, CollectionUri, ItemUri
+from stac_fastapi.api.models import APIRequest
 from stac_fastapi.api.routes import create_async_endpoint, create_sync_endpoint
 from stac_fastapi.types import stac as stac_types
 from stac_fastapi.types.config import ApiSettings
@@ -63,42 +62,30 @@ class TransactionExtension(ApiExtension):
         raise NotImplementedError
 
     def register_create_item(self):
-        """Register create item endpoint (POST /collections/{collectionId}/items)."""
+        """Register create item endpoint (POST /collections/{collection_id}/items)."""
         self.router.add_api_route(
             name="Create Item",
-            path="/collections/{collectionId}/items",
-            response_model=Item if self.settings.enable_response_models else None,
-            response_class=self.response_class,
-            response_model_exclude_unset=True,
-            response_model_exclude_none=True,
+            path="/collections/{collection_id}/items",
             methods=["POST"],
-            endpoint=self._create_endpoint(self.client.create_item, stac_types.Item),
+            endpoint=self.client.create_item,
         )
 
     def register_update_item(self):
-        """Register update item endpoint (PUT /collections/{collectionId}/items)."""
+        """Register update item endpoint (PUT /collections/{collection_id}/items/{item_id})."""
         self.router.add_api_route(
             name="Update Item",
-            path="/collections/{collectionId}/items",
-            response_model=Item if self.settings.enable_response_models else None,
-            response_class=self.response_class,
-            response_model_exclude_unset=True,
-            response_model_exclude_none=True,
+            path="/collections/{collection_id}/items/{item_id}",
             methods=["PUT"],
-            endpoint=self._create_endpoint(self.client.update_item, stac_types.Item),
+            endpoint=self.client.update_item,
         )
 
     def register_delete_item(self):
-        """Register delete item endpoint (DELETE /collections/{collectionId}/items/{itemId})."""
+        """Register delete item endpoint (DELETE /collections/{collection_id}/items/{item_id})."""
         self.router.add_api_route(
             name="Delete Item",
-            path="/collections/{collectionId}/items/{itemId}",
-            response_model=Item if self.settings.enable_response_models else None,
-            response_class=self.response_class,
-            response_model_exclude_unset=True,
-            response_model_exclude_none=True,
+            path="/collections/{collection_id}/items/{item_id}",
             methods=["DELETE"],
-            endpoint=self._create_endpoint(self.client.delete_item, ItemUri),
+            endpoint=self.client.delete_item,
         )
 
     def register_create_collection(self):
@@ -106,44 +93,26 @@ class TransactionExtension(ApiExtension):
         self.router.add_api_route(
             name="Create Collection",
             path="/collections",
-            response_model=Collection if self.settings.enable_response_models else None,
-            response_class=self.response_class,
-            response_model_exclude_unset=True,
-            response_model_exclude_none=True,
             methods=["POST"],
-            endpoint=self._create_endpoint(
-                self.client.create_collection, stac_types.Collection
-            ),
+            endpoint=self.client.create_collection,
         )
 
     def register_update_collection(self):
         """Register update collection endpoint (PUT /collections)."""
         self.router.add_api_route(
             name="Update Collection",
-            path="/collections",
-            response_model=Collection if self.settings.enable_response_models else None,
-            response_class=self.response_class,
-            response_model_exclude_unset=True,
-            response_model_exclude_none=True,
+            path="/collections/{collection_id}",
             methods=["PUT"],
-            endpoint=self._create_endpoint(
-                self.client.update_collection, stac_types.Collection
-            ),
+            endpoint=self.client.update_collection,
         )
 
     def register_delete_collection(self):
-        """Register delete collection endpoint (DELETE /collections/{collectionId})."""
+        """Register delete collection endpoint (DELETE /collections/{collection_id})."""
         self.router.add_api_route(
             name="Delete Collection",
-            path="/collections/{collectionId}",
-            response_model=Collection if self.settings.enable_response_models else None,
-            response_class=self.response_class,
-            response_model_exclude_unset=True,
-            response_model_exclude_none=True,
+            path="/collections/{collection_id}",
             methods=["DELETE"],
-            endpoint=self._create_endpoint(
-                self.client.delete_collection, CollectionUri
-            ),
+            endpoint=self.client.delete_collection,
         )
 
     def register(self, app: FastAPI) -> None:
